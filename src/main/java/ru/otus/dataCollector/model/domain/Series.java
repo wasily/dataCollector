@@ -27,6 +27,9 @@ public class Series {
     @Field(value = "isAdult")
     private boolean isAdult;
 
+    @Field(value = "startYear")
+    private Integer startYear;
+
     @Field(value = "genres")
     private List<String> genres;
 }

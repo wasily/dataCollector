@@ -21,6 +21,9 @@ public class SubscribedRelease {
     @Field(value = "contentType")
     private String contentType;
 
+    @Field(value = "userEmail")
+    private String userEmail;
+
     @Field(value = "contentReleases")
     private List<ContentRelease> contentReleases;
 }

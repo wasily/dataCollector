@@ -24,8 +24,8 @@ public class Subscription {
     @Field(value = "contentTitle")
     private String contentTitle;
 
-    @Field(value = "user")
-    private String user;
+    @Field(value = "userEmail")
+    private String userEmail;
 
     @Field(value = "lastUpdateTime")
     private LocalDateTime lastUpdateTime;
