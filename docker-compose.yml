@@ -1,0 +1,25 @@
+version: "3"
+services:
+  mongodb:
+    build:
+      context: ./mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - backend
+  app:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+    depends_on:
+      - mongodb
+    environment:
+      - DATABASE=dev
+      - URI=mongodb://mongodb:27017/dev
+      - PORT=8080
+      - SPRING_PROFILES_ACTIVE=local
+networks:
+  backend:
