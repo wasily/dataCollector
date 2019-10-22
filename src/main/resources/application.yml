@@ -2,5 +2,17 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/dev
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: the-useless-box@mail.ru
+    password: ^TmtyprT3MR3
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+
 server:
   port: 8080

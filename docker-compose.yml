@@ -21,5 +21,7 @@ services:
       - URI=mongodb://mongodb:27017/dev
       - PORT=8080
       - SPRING_PROFILES_ACTIVE=local
+      - MAILBOX=the-useless-box@mail.ru
+      - MAIL_PASS=^TmtyprT3MR3
 networks:
   backend:

@@ -10,6 +10,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import ru.otus.dataCollector.integration.SubscribedReleasesSearchingGateway;
 import ru.otus.dataCollector.model.converting.ReleaseEntityResponse;
 import ru.otus.dataCollector.model.domain.ContentRelease;
 import ru.otus.dataCollector.repositories.RutrackerRepository;
@@ -32,6 +33,7 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
     private static final String MOVIE_CONTENT_TYPE = "movie";
     private static final String SERIES_CONTENT_TYPE = "series";
     private final RutrackerRepository rutrackerRepository;
+    private final SubscribedReleasesSearchingGateway subscribedReleasesSearchingGateway;
 
     @Override
     public void uploadReleases() {
@@ -44,6 +46,8 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
 
         upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
         upload(template, seriesCategories, SERIES_CONTENT_TYPE);
+
+        subscribedReleasesSearchingGateway.searchSubscribedReleases();
     }
 
     private List<String> extractTopics(ResponseEntity<String> response, String forumId) {
