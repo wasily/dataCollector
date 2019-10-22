@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -40,23 +41,27 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
         String tmpDir = System.getProperty("java.io.tmpdir");
         String filename = tmpDir + "/content.gz";
         String contentFilename = tmpDir + "/content.tsv";
-        boolean downloadStatus = downloadFile(filename, CONTENT_LINK);
-        boolean decompressStatus = decompressFile(filename, contentFilename);
-        upload(contentFilename);
+        if (downloadFile(filename, CONTENT_LINK)){
+            if (decompressFile(filename, contentFilename)){
+                upload(contentFilename);
+            }
+        }
     }
 
     private boolean downloadFile(String newFileName, String link) {
+        URL url;
         try {
-            URL url = new URL(link);
-            ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-            FileOutputStream fileOutputStream = new FileOutputStream(newFileName);
-            FileChannel fileChannel = fileOutputStream.getChannel();
-            fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-            readableByteChannel.close();
-            fileChannel.close();
-            fileOutputStream.close();
-            return true;
-        } catch (IOException e) {
+            url = new URL(link);
+            try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+                 FileOutputStream fileOutputStream = new FileOutputStream(newFileName);
+                 FileChannel fileChannel = fileOutputStream.getChannel()) {
+                fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        } catch (MalformedURLException e) {
             e.printStackTrace();
             return false;
         }
@@ -78,15 +83,15 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
                     withCSVParser(new CSVParserBuilder().withSeparator(CONTENT_VALUES_SEPARATOR).build()).build();
             String[] nextLine;
             while ((nextLine = reader.readNext()) != null) {
-                if (nextLine[1].equals(MOVIE_TYPE)) {
+                if (nextLine[1].equals(MOVIE_TYPE) && nextLine.length == 9) {
                     try {
-                        movieRepository.save(new Movie(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]),
+                        movieRepository.save(new Movie(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
                                 Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals("N")).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
-                } else if (nextLine[1].equals(SERIES_TYPE)) {
+                } else if (nextLine[1].equals(SERIES_TYPE) && nextLine.length == 9) {
                     try {
-                        seriesRepository.save(new Series(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]),
+                        seriesRepository.save(new Series(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
                                 Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals("N")).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
@@ -98,7 +103,11 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     }
 
     private Boolean transformBoolean(String field) {
-        return field.equals("\\N") ? null : field.equals("1");
+        return field.equals("N") ? null : field.equals("1");
+    }
+
+    private Integer parseStartYear(String year) {
+        return year.equals("N") ? null : Integer.parseInt(year);
     }
 
 }

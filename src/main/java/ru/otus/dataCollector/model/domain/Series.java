@@ -25,7 +25,7 @@ public class Series {
     private String originalTitle;
 
     @Field(value = "isAdult")
-    private boolean isAdult;
+    private Boolean isAdult;
 
     @Field(value = "startYear")
     private Integer startYear;
