@@ -9,12 +9,15 @@ import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.dsl.Pollers;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.PollableChannel;
+import ru.otus.dataCollector.model.domain.SubscribedRelease;
 import ru.otus.dataCollector.notifier.NotifierService;
 import ru.otus.dataCollector.subscriptionSearch.SubscribedReleasesSearchingService;
 
+import java.time.LocalDateTime;
+
 @Configuration
 @IntegrationComponentScan
-public class Config {
+public class IntegrationConfiguration {
 
     @Autowired
     private SubscribedReleasesSearchingService subscribedReleasesSearchingService;
@@ -40,13 +43,13 @@ public class Config {
     @Bean
     public IntegrationFlow searchSubscribedReleases() {
         return f -> f.channel(searchSubscribedReleasesChannel())
-                .handle(subscribedReleasesSearchingService, "performSearch");
+                .handle(m -> subscribedReleasesSearchingService.performSearch((LocalDateTime) m.getPayload()));
     }
 
     @Bean
     public IntegrationFlow notifyUsers() {
         return f -> f.channel(notifyUsersChannel())
-                .handle(notifierService, "notifySubscribers");
+                .handle(m -> notifierService.notifySubscriber((SubscribedRelease) m.getPayload()));
     }
 
 }

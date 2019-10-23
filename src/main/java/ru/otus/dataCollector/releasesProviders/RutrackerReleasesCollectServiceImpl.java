@@ -44,10 +44,10 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
         List<String> moviesCategories = extractTopics(forumTreeResponse, "2");
         List<String> seriesCategories = extractTopics(forumTreeResponse, "18");
 
-        upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
-        upload(template, seriesCategories, SERIES_CONTENT_TYPE);
-
-        subscribedReleasesSearchingGateway.searchSubscribedReleases();
+        LocalDateTime updateTime = LocalDateTime.now();
+//        upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
+//        upload(template, seriesCategories, SERIES_CONTENT_TYPE);
+        subscribedReleasesSearchingGateway.searchSubscribedReleases(updateTime);
     }
 
     private List<String> extractTopics(ResponseEntity<String> response, String forumId) {

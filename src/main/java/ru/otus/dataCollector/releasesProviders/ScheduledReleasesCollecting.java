@@ -11,7 +11,7 @@ import java.util.List;
 public class ScheduledReleasesCollecting {
     private final List<ReleasesCollectService> releasesCollectService;
 
-    @Scheduled(fixedRate = 1000*60*60*12)
+    @Scheduled(initialDelay = 10000, fixedRate = 1000*60*60*12)
     public void collectReleasesContent(){
         releasesCollectService.forEach(ReleasesCollectService::uploadReleases);
     }

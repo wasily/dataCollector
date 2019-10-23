@@ -14,5 +14,7 @@ spring:
         smtp:
           auth: true
           starttls.enable: true
+data-collector:
+  serverEmail: ${MAILBOX}
 server:
   port: ${PORT}
