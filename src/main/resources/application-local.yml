@@ -3,5 +3,18 @@ spring:
     mongodb:
       database: ${DATABASE}
       uri: ${URI}
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: ${MAILBOX}
+    password: ${MAIL_PASS}
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+data-collector:
+  serverEmail: ${MAILBOX}
 server:
   port: ${PORT}

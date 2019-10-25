@@ -11,6 +11,6 @@ public class ScheduledContentCollecting {
 
     @Scheduled(fixedRate = 1000*60*60*24)
     public void collectContent(){
-        contentCollectService.uploadContent();
+//        contentCollectService.uploadContent();
     }
 }

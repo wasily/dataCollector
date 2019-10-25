@@ -13,10 +13,7 @@ import ru.otus.dataCollector.model.domain.Series;
 import ru.otus.dataCollector.repositories.MovieRepository;
 import ru.otus.dataCollector.repositories.SeriesRepository;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -70,6 +67,7 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     private boolean decompressFile(String gzipFileName, String newFileName) {
         try (GzipCompressorInputStream in = new GzipCompressorInputStream(new FileInputStream(gzipFileName))) {
             IOUtils.copy(in, new FileOutputStream(newFileName));
+            new File(gzipFileName).delete();
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -97,6 +95,7 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
                     }
                 }
             }
+            new File(filename).delete();
         } catch (IOException e) {
             e.printStackTrace();
         }
