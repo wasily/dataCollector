@@ -32,6 +32,8 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     private final SeriesRepository seriesRepository;
     private final EventRepository eventRepository;
     private final static String CONTENT_LINK = "https://datasets.imdbws.com/title.basics.tsv.gz";
+    private final static String FIELD_MISSING_FLAG = "N";
+    private final static String LITERAL_FOR_TRUE_VALUE = "1";
     private final static String GENRES_SEPARATOR = ",";
     private final static char CONTENT_VALUES_SEPARATOR = '\t';
     private final static String MOVIE_TYPE = "movie";
@@ -89,16 +91,16 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
                     withCSVParser(new CSVParserBuilder().withSeparator(CONTENT_VALUES_SEPARATOR).build()).build();
             String[] nextLine;
             while ((nextLine = reader.readNext()) != null) {
-                if (nextLine[1].equals(MOVIE_TYPE) && nextLine.length == 9) {
+                if (nextLine.length == 9 && nextLine[1].equals(MOVIE_TYPE)) {
                     try {
                         movieRepository.save(new Movie(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
-                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals("N")).collect(Collectors.toList())));
+                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
-                } else if (nextLine[1].equals(SERIES_TYPE) && nextLine.length == 9) {
+                } else if (nextLine.length == 9 && nextLine[1].equals(SERIES_TYPE)) {
                     try {
                         seriesRepository.save(new Series(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
-                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals("N")).collect(Collectors.toList())));
+                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
                 }
@@ -110,11 +112,18 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     }
 
     private Boolean transformBoolean(String field) {
-        return field.equals("N") ? null : field.equals("1");
+        return field.equals(FIELD_MISSING_FLAG) ? null : field.equals(LITERAL_FOR_TRUE_VALUE);
     }
 
     private Integer parseStartYear(String year) {
-        return year.equals("N") ? null : Integer.parseInt(year);
+        if (year.equals(FIELD_MISSING_FLAG)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(year);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
 }
