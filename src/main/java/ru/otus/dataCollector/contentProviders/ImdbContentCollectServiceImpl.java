@@ -8,8 +8,10 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import ru.otus.dataCollector.model.domain.Event;
 import ru.otus.dataCollector.model.domain.Movie;
 import ru.otus.dataCollector.model.domain.Series;
+import ru.otus.dataCollector.repositories.EventRepository;
 import ru.otus.dataCollector.repositories.MovieRepository;
 import ru.otus.dataCollector.repositories.SeriesRepository;
 
@@ -19,6 +21,7 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class ImdbContentCollectServiceImpl implements ContentCollectService {
     private final MovieRepository movieRepository;
     private final SeriesRepository seriesRepository;
+    private final EventRepository eventRepository;
     private final static String CONTENT_LINK = "https://datasets.imdbws.com/title.basics.tsv.gz";
     private final static String GENRES_SEPARATOR = ",";
     private final static char CONTENT_VALUES_SEPARATOR = '\t';
@@ -38,9 +42,13 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
         String tmpDir = System.getProperty("java.io.tmpdir");
         String filename = tmpDir + "/content.gz";
         String contentFilename = tmpDir + "/content.tsv";
-        if (downloadFile(filename, CONTENT_LINK)){
-            if (decompressFile(filename, contentFilename)){
+        LocalDateTime updateTime = LocalDateTime.now();
+        long beforeCount = movieRepository.count() + seriesRepository.count();
+        if (downloadFile(filename, CONTENT_LINK)) {
+            if (decompressFile(filename, contentFilename)) {
                 upload(contentFilename);
+                long afterCount = movieRepository.count() + seriesRepository.count();
+                eventRepository.save(new Event("Добавлены новые фильмы/сериалы", afterCount - beforeCount, updateTime));
             }
         }
     }

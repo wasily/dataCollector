@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 import ru.otus.dataCollector.integration.SubscribedReleasesSearchingGateway;
 import ru.otus.dataCollector.model.converting.ReleaseEntityResponse;
 import ru.otus.dataCollector.model.domain.ContentRelease;
+import ru.otus.dataCollector.model.domain.Event;
+import ru.otus.dataCollector.repositories.EventRepository;
 import ru.otus.dataCollector.repositories.RutrackerRepository;
 
 import java.io.IOException;
@@ -33,6 +35,7 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
     private static final String MOVIE_CONTENT_TYPE = "movie";
     private static final String SERIES_CONTENT_TYPE = "series";
     private final RutrackerRepository rutrackerRepository;
+    private final EventRepository eventRepository;
     private final SubscribedReleasesSearchingGateway subscribedReleasesSearchingGateway;
 
     @Override
@@ -45,8 +48,11 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
         List<String> seriesCategories = extractTopics(forumTreeResponse, "18");
 
         LocalDateTime updateTime = LocalDateTime.now();
-//        upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
-//        upload(template, seriesCategories, SERIES_CONTENT_TYPE);
+        long beforeCount = rutrackerRepository.count();
+        upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
+        upload(template, seriesCategories, SERIES_CONTENT_TYPE);
+        long afterCount = rutrackerRepository.count();
+        eventRepository.save(new Event("Добавлены новые релизы", afterCount - beforeCount, updateTime));
         subscribedReleasesSearchingGateway.searchSubscribedReleases(updateTime);
     }
 

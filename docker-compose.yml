@@ -7,11 +7,11 @@ services:
       - "27017:27017"
     networks:
       - backend
-  app:
+  datacollector:
     build:
       context: .
     ports:
-      - "8080:8080"
+      - "8081:8081"
     networks:
       - backend
     depends_on:
@@ -19,7 +19,7 @@ services:
     environment:
       - DATABASE=dev
       - URI=mongodb://mongodb:27017/dev
-      - PORT=8080
+      - PORT=8081
       - SPRING_PROFILES_ACTIVE=local
       - MAILBOX=the-useless-box@mail.ru
       - MAIL_PASS=^TmtyprT3MR3

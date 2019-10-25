@@ -13,7 +13,15 @@ spring:
         smtp:
           auth: true
           starttls.enable: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, datacollector
+  endpoint:
+    health:
+      show-details: always
 data-collector:
   serverEmail: the-useless-box@mail.ru
 server:
-  port: 8080
+  port: 8081
