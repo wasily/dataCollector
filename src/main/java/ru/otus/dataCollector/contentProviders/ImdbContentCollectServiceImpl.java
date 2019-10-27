@@ -38,6 +38,14 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     private final static char CONTENT_VALUES_SEPARATOR = '\t';
     private final static String MOVIE_TYPE = "movie";
     private final static String SERIES_TYPE = "tvSeries";
+    private final static int IMDBID_IDX = 0;
+    private final static int MOVIE_TYPE_IDX = 1;
+    private final static int PRIMARY_TITLE_IDX = 2;
+    private final static int ORIGINAL_TITLE_IDX = 3;
+    private final static int IS_ADULT_IDX = 4;
+    private final static int START_YEAR_IDX = 5;
+    private final static int GENRES_IDX = 8;
+    private final static int VALUES_REQUIRED_COUNT = 9;
 
     @Override
     public void uploadContent() {
@@ -91,16 +99,18 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
                     withCSVParser(new CSVParserBuilder().withSeparator(CONTENT_VALUES_SEPARATOR).build()).build();
             String[] nextLine;
             while ((nextLine = reader.readNext()) != null) {
-                if (nextLine.length == 9 && nextLine[1].equals(MOVIE_TYPE)) {
+                if (nextLine.length == VALUES_REQUIRED_COUNT && nextLine[MOVIE_TYPE_IDX].equals(MOVIE_TYPE)) {
                     try {
-                        movieRepository.save(new Movie(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
-                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
+                        movieRepository.save(new Movie(nextLine[IMDBID_IDX], nextLine[PRIMARY_TITLE_IDX], nextLine[ORIGINAL_TITLE_IDX],
+                                transformBoolean(nextLine[IS_ADULT_IDX]), parseStartYear(nextLine[START_YEAR_IDX]),
+                                Arrays.stream(nextLine[GENRES_IDX].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
-                } else if (nextLine.length == 9 && nextLine[1].equals(SERIES_TYPE)) {
+                } else if (nextLine.length == VALUES_REQUIRED_COUNT && nextLine[MOVIE_TYPE_IDX].equals(SERIES_TYPE)) {
                     try {
-                        seriesRepository.save(new Series(nextLine[0], nextLine[2], nextLine[3], transformBoolean(nextLine[4]), parseStartYear(nextLine[5]),
-                                Arrays.stream(nextLine[8].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
+                        seriesRepository.save(new Series(nextLine[IMDBID_IDX], nextLine[PRIMARY_TITLE_IDX], nextLine[ORIGINAL_TITLE_IDX],
+                                transformBoolean(nextLine[IS_ADULT_IDX]), parseStartYear(nextLine[START_YEAR_IDX]),
+                                Arrays.stream(nextLine[GENRES_IDX].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
                     } catch (DuplicateKeyException e) {
                     }
                 }
