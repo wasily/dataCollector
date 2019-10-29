@@ -17,4 +17,9 @@ public class RutrackerRepositoryCustomImpl implements RutrackerRepositoryCustom 
     public List<ContentRelease> findByTitleContainingByTime(String title, String contentType, LocalDateTime time) {
         return mongoTemplate.find(Query.query(Criteria.where("title").regex(title).and("contentType").is(contentType).and("regTime").gt(time)), ContentRelease.class);
     }
+
+    @Override
+    public Long countNewReleasesByCategory(String category, int periodInHours) {
+        return  mongoTemplate.count(Query.query(Criteria.where("regTime").gt(LocalDateTime.now().minusHours(periodInHours)).and("contentType").is(category)),ContentRelease.class);
+    }
 }

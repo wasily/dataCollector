@@ -9,6 +9,4 @@ import java.util.List;
 public interface RutrackerRepository extends MongoRepository<ContentRelease, String>, RutrackerRepositoryCustom {
     @Query("{ 'title' : {$regex:?0, $options:'i'}, 'contentType' : ?1 }")
     List<ContentRelease> findByTitleContaining(String title, String contentType);
-    @Query(value = "{ 'contentType' : ?0 }", count = true)
-    Long countCategory(String category);
 }
