@@ -7,7 +7,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import java.time.LocalDateTime;
 
 @MessagingGateway
-public interface SubscribedReleasesSearchingGateway {
-    @Gateway(requestChannel = "searchSubscribedReleasesChannel")
-    void searchSubscribedReleases(@Payload LocalDateTime updateTime);
+public interface ReleasesGateway {
+    @Gateway(requestChannel = "releasesProcessingChannel")
+    void processReleases(@Payload LocalDateTime updateTime);
 }

@@ -14,6 +14,14 @@ spring:
         smtp:
           auth: true
           starttls.enable: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, datacollector
+  endpoint:
+    health:
+      show-details: always
 data-collector:
   serverEmail: ${MAILBOX}
 server:

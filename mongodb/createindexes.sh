@@ -21,3 +21,4 @@ mongo --eval "db.subscriptions.insert([
     \"userEmail\" : \"the-useless-box@mail.ru\",
     \"lastUpdateTime\" : ISODate(\"2018-10-23T11:27:51.221Z\")
     }])" dev
+mongo --eval "db.events.createIndex({ \"eventTime\" : -1})" dev
