@@ -5,12 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ReleaseEntityResponse {
     @JsonProperty("result")
-    LinkedHashMap<String, ReleaseEntity> result;
+    HashMap<String, ReleaseEntity> result;
 }
