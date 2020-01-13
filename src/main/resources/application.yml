@@ -1,0 +1,27 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://collector:4KdzC2AjqVozZ1aJ@cluster0-ghsgi.mongodb.net/dev
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: the-useless-box@mail.ru
+    password: ^TmtyprT3MR3
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, datacollector
+  endpoint:
+    health:
+      show-details: always
+data-collector:
+  serverEmail: the-useless-box@mail.ru
+server:
+  port: 8081
