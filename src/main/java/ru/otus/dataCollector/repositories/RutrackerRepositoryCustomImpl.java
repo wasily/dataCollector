@@ -22,4 +22,9 @@ public class RutrackerRepositoryCustomImpl implements RutrackerRepositoryCustom 
     public Long countNewReleasesByCategory(String category, int periodInHours) {
         return  mongoTemplate.count(Query.query(Criteria.where("regTime").gt(LocalDateTime.now().minusHours(periodInHours)).and("contentType").is(category)),ContentRelease.class);
     }
+
+    @Override
+    public long countByCategory(String category) {
+        return mongoTemplate.count(Query.query(Criteria.where("contentType").is(category)), ContentRelease.class);
+    }
 }

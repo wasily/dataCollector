@@ -10,6 +10,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import ru.otus.dataCollector.model.converting.ReleaseEntity;
 import ru.otus.dataCollector.model.converting.ReleaseEntityResponse;
 import ru.otus.dataCollector.model.domain.ContentRelease;
 import ru.otus.dataCollector.model.domain.Event;
@@ -22,7 +23,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 @Service
@@ -45,13 +46,13 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
         RestTemplate template = new RestTemplate(clientHttpRequestFactory);
 
         ResponseEntity<String> forumTreeResponse = template.getForEntity(FORUMS_URL, String.class);
-        List<String> moviesCategories = extractTopics(forumTreeResponse, MOVIES_TOPIC_ID);
-        List<String> seriesCategories = extractTopics(forumTreeResponse, SERIES_TOPIC_ID);
+        List<String> moviesTopics = extractTopics(forumTreeResponse, MOVIES_TOPIC_ID);
+        List<String> seriesTopics = extractTopics(forumTreeResponse, SERIES_TOPIC_ID);
 
         LocalDateTime updateTime = LocalDateTime.now();
         long beforeCount = rutrackerRepository.count();
-        upload(template, moviesCategories, MOVIE_CONTENT_TYPE);
-        upload(template, seriesCategories, SERIES_CONTENT_TYPE);
+        processContent(template, moviesTopics, MOVIE_CONTENT_TYPE);
+        processContent(template, seriesTopics, SERIES_CONTENT_TYPE);
         long afterCount = rutrackerRepository.count();
         eventRepository.save(new Event("Добавлены новые релизы", afterCount - beforeCount, updateTime));
     }
@@ -80,30 +81,40 @@ public class RutrackerReleasesCollectServiceImpl implements ReleasesCollectServi
         return result;
     }
 
-    private void upload(RestTemplate template, List<String> contentCategories, String contentType) {
-        for (String category : contentCategories) {
+    private void processContent(RestTemplate template, List<String> contentTopics, String contentType) {
+        long releasesCount = rutrackerRepository.countByCategory(contentType);
+        List<String> releasesIds = new ArrayList<>((int) Math.min(releasesCount + 100, Integer.MAX_VALUE));
+        ObjectMapper mapper = new ObjectMapper();
+        for (String category : contentTopics) {
             try {
-                ObjectMapper mapper = new ObjectMapper();
-                List<String> topicsList = new LinkedList<>();
-                mapper.readTree(template.getForObject(SUBFORUMS_URL + category, String.class)).path("result").fields().forEachRemaining(x -> topicsList.add(x.getKey()));
-                IntStream.range(0, (topicsList.size() + RUTRACKER_REQUEST_LIMIT - 1) / RUTRACKER_REQUEST_LIMIT)
-                        .mapToObj(i -> topicsList.subList(i * RUTRACKER_REQUEST_LIMIT, Math.min(RUTRACKER_REQUEST_LIMIT * (i + 1), topicsList.size())))
-                        .forEach(releaseId -> {
-                            String joinedReleasesIds = releaseId.stream().collect(Collectors.joining(","));
-                            ReleaseEntityResponse obj = template.getForObject(RELEASES_URL + joinedReleasesIds, ReleaseEntityResponse.class);
-                            obj.getResult().forEach((id, content) -> {
-                                try {
-                                    if (content != null) {
-                                        rutrackerRepository.save(new ContentRelease(id, contentType, content.getTitle(), content.getSize(),
-                                                content.getInfoHash(), LocalDateTime.ofEpochSecond(content.getRegTime(), 0, ZoneOffset.UTC)));
-                                    }
-                                } catch (DuplicateKeyException e) {
-                                }
-                            });
-                        });
+                mapper.readTree(template.getForObject(SUBFORUMS_URL + category, String.class)).path("result").fieldNames().forEachRemaining(releasesIds::add);
             } catch (RestClientException | IOException e) {
-                e.getLocalizedMessage();
             }
+        }
+        int chunksCount = (releasesIds.size() + RUTRACKER_REQUEST_LIMIT - 1) / RUTRACKER_REQUEST_LIMIT;
+        IntStream.range(0, chunksCount)
+                .parallel()
+                .mapToObj(i -> combineIds(releasesIds, i))
+                .forEach(ids -> requestReleases(template, ids).thenAccept(response ->
+                        response.getResult().entrySet().stream().parallel()
+                                .filter(entry -> entry.getValue() != null)
+                                .forEach(entry -> saveRelease(entry.getKey(), entry.getValue(), contentType))));
+    }
+
+    private String combineIds(List<String> topicsIds, int chunkNumber) {
+        return String.join(",", topicsIds.subList(chunkNumber * RUTRACKER_REQUEST_LIMIT,
+                Math.min(RUTRACKER_REQUEST_LIMIT * (chunkNumber + 1), topicsIds.size())));
+    }
+
+    private CompletableFuture<ReleaseEntityResponse> requestReleases(RestTemplate template, String joinedTopicsIds) {
+        return CompletableFuture.supplyAsync(() -> template.getForObject(RELEASES_URL + joinedTopicsIds, ReleaseEntityResponse.class));
+    }
+
+    private void saveRelease(String id, ReleaseEntity release, String contentType) {
+        try {
+            rutrackerRepository.save(new ContentRelease(id, contentType, release.getTitle(), release.getSize(),
+                    release.getInfoHash(), LocalDateTime.ofEpochSecond(release.getRegTime(), 0, ZoneOffset.UTC)));
+        } catch (DuplicateKeyException e) {
         }
     }
 }
