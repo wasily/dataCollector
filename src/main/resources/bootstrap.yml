@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: data_collector
+  cloud:
+    config:
+      uri: http://localhost:5000
+  profiles:
+    active: local
