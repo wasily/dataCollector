@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class RutrackerRepositoryCustomImpl implements RutrackerRepositoryCustom {
+public class RutrackerRepositoryImpl implements RutrackerRepositoryCustom {
     private final MongoTemplate mongoTemplate;
 
     @Override
     public List<ContentRelease> findByTitleContainingByTime(String title, String contentType, LocalDateTime time) {
-        return mongoTemplate.find(Query.query(Criteria.where("title").regex(title).and("contentType").is(contentType).and("regTime").gt(time)), ContentRelease.class);
+        return mongoTemplate.find(Query.query(Criteria.where("title").regex(title,"i").and("contentType").is(contentType).and("regTime").gt(time)), ContentRelease.class);
     }
 
     @Override
