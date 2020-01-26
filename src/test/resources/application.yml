@@ -1,0 +1,19 @@
+logging:
+  level:
+    root: WARN
+spring:
+  data:
+    mongodb:
+      port: 0
+      database: test
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: test
+    password: test
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
