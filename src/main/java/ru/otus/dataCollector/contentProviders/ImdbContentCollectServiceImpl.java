@@ -1,29 +1,26 @@
 package ru.otus.dataCollector.contentProviders;
 
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import ru.otus.dataCollector.model.converting.ImdbContentParser;
 import ru.otus.dataCollector.model.domain.Event;
-import ru.otus.dataCollector.model.domain.Movie;
-import ru.otus.dataCollector.model.domain.Series;
 import ru.otus.dataCollector.repositories.EventRepository;
 import ru.otus.dataCollector.repositories.MovieRepository;
 import ru.otus.dataCollector.repositories.SeriesRepository;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,20 +29,8 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     private final SeriesRepository seriesRepository;
     private final EventRepository eventRepository;
     private final static String CONTENT_LINK = "https://datasets.imdbws.com/title.basics.tsv.gz";
-    private final static String FIELD_MISSING_FLAG = "N";
-    private final static String LITERAL_FOR_TRUE_VALUE = "1";
-    private final static String GENRES_SEPARATOR = ",";
-    private final static char CONTENT_VALUES_SEPARATOR = '\t';
     private final static String MOVIE_TYPE = "movie";
     private final static String SERIES_TYPE = "tvSeries";
-    private final static int IMDBID_IDX = 0;
-    private final static int MOVIE_TYPE_IDX = 1;
-    private final static int PRIMARY_TITLE_IDX = 2;
-    private final static int ORIGINAL_TITLE_IDX = 3;
-    private final static int IS_ADULT_IDX = 4;
-    private final static int START_YEAR_IDX = 5;
-    private final static int GENRES_IDX = 8;
-    private final static int VALUES_REQUIRED_COUNT = 9;
 
     @Override
     public void uploadContent() {
@@ -94,46 +79,19 @@ public class ImdbContentCollectServiceImpl implements ContentCollectService {
     }
 
     private void upload(String filename) {
-        try {
-            CSVReader reader = new CSVReaderBuilder(new FileReader(filename)).withSkipLines(1).
-                    withCSVParser(new CSVParserBuilder().withSeparator(CONTENT_VALUES_SEPARATOR).build()).build();
-            String[] nextLine;
-            while ((nextLine = reader.readNext()) != null) {
-                if (nextLine.length == VALUES_REQUIRED_COUNT && nextLine[MOVIE_TYPE_IDX].equals(MOVIE_TYPE)) {
-                    try {
-                        movieRepository.save(new Movie(nextLine[IMDBID_IDX], nextLine[PRIMARY_TITLE_IDX], nextLine[ORIGINAL_TITLE_IDX],
-                                transformBoolean(nextLine[IS_ADULT_IDX]), parseStartYear(nextLine[START_YEAR_IDX]),
-                                Arrays.stream(nextLine[GENRES_IDX].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
-                    } catch (DuplicateKeyException e) {
-                    }
-                } else if (nextLine.length == VALUES_REQUIRED_COUNT && nextLine[MOVIE_TYPE_IDX].equals(SERIES_TYPE)) {
-                    try {
-                        seriesRepository.save(new Series(nextLine[IMDBID_IDX], nextLine[PRIMARY_TITLE_IDX], nextLine[ORIGINAL_TITLE_IDX],
-                                transformBoolean(nextLine[IS_ADULT_IDX]), parseStartYear(nextLine[START_YEAR_IDX]),
-                                Arrays.stream(nextLine[GENRES_IDX].split(GENRES_SEPARATOR)).filter(genre -> !genre.equals(FIELD_MISSING_FLAG)).collect(Collectors.toList())));
-                    } catch (DuplicateKeyException e) {
-                    }
+        ImdbContentParser parser = new ImdbContentParser(filename);
+        while (parser.hasNextContentEntry()) {
+            if (parser.getContentType().equals(MOVIE_TYPE)) {
+                try {
+                    movieRepository.save(parser.getMovie());
+                } catch (DuplicateKeyException e) {
+                }
+            } else if (parser.getContentType().equals(SERIES_TYPE)) {
+                try {
+                    seriesRepository.save(parser.getSeries());
+                } catch (DuplicateKeyException e) {
                 }
             }
-            new File(filename).delete();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
-
-    private Boolean transformBoolean(String field) {
-        return field.equals(FIELD_MISSING_FLAG) ? null : field.equals(LITERAL_FOR_TRUE_VALUE);
-    }
-
-    private Integer parseStartYear(String year) {
-        if (year.equals(FIELD_MISSING_FLAG)) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(year);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
 }
